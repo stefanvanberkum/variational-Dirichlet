@@ -3,14 +3,10 @@ import scipy
 
 
 def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points, truncation_level):
-    sticks = np.array([1.0])
-    weights = np.array([alpha])
-
-    for _ in range(1, truncation_level):
-        component_weight = np.random.beta(1, alpha)
-        sticks = np.append(sticks, sticks[-1] * (1.0 - component_weight))
-
-    weights = sticks / np.sum(sticks)
+    weights = np.ones(shape=(truncation_level))
+    betas = np.random.beta(alpha, 1, size=(truncation_level))
+    weights[0] = betas[0]
+    weights[1:] = betas[1:] * (1 - betas[:-1]).cumprod()
 
     data = np.random.multinomial(1, weights, size=data_points)
 
@@ -28,9 +24,7 @@ def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points
     return np.array(tbret)
 
 
-
 def get_simulated_data():
-    import math
     all_dimensions = [5, 10, 20, 30, 40, 50]
     TRUNCATION_LEVEL = 20
     alpha = 1
