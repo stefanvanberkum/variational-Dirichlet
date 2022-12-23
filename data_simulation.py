@@ -4,9 +4,9 @@ import scipy
 
 def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points, truncation_level):
     weights = np.ones(shape=(truncation_level))
-    betas = np.random.beta(1, alpha, size=(truncation_level))
-    weights[0] = betas[0]
-    weights[1:] = betas[1:] * (1 - betas[:-1]).cumprod()
+    partial_stick_breakoffs = np.random.beta(1, alpha, size=(truncation_level))
+    weights[0] = partial_stick_breakoffs[0]
+    weights[1:] = partial_stick_breakoffs[1:] * (1 - partial_stick_breakoffs[:-1]).cumprod()
 
     data = np.random.multinomial(1, weights, size=data_points)
 
