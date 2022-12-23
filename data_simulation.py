@@ -8,10 +8,9 @@ def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points
 
     for _ in range(1, truncation_level):
         component_weight = np.random.beta(1, alpha)
-        weights = np.append(weights, component_weight)
         sticks = np.append(sticks, sticks[-1] * (1.0 - component_weight))
 
-    weights /= np.sum(weights)
+    weights = sticks / np.sum(sticks)
 
     data = np.random.multinomial(1, weights, size=data_points)
 
@@ -31,6 +30,7 @@ def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points
 
 
 def get_simulated_data():
+    import math
     all_dimensions = [5, 10, 20, 30, 40, 50]
     TRUNCATION_LEVEL = 20
     alpha = 1
@@ -42,8 +42,10 @@ def get_simulated_data():
             for j in range(dimension):
                 if i == j:
                     covariance_matrix[i, j] = 1
-                else:
+                elif abs(i - j) == 1:
                     covariance_matrix[i, j] = 0.9
+                else:
+                    covariance_matrix[i, j] = 0
 
         COVARIANCE_MATRIX = covariance_matrix
 
