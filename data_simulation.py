@@ -4,7 +4,7 @@ import scipy
 
 def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points, truncation_level):
     weights = np.ones(shape=(truncation_level))
-    betas = np.random.beta(alpha, 1, size=(truncation_level))
+    betas = np.random.beta(1, alpha, size=(truncation_level))
     weights[0] = betas[0]
     weights[1:] = betas[1:] * (1 - betas[:-1]).cumprod()
 
