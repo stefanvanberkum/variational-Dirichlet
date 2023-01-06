@@ -2,7 +2,13 @@ import numpy as np
 import scipy
 
 
-def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points, truncation_level):
+
+def generate_simulated_data(BASE_MEAN, BASE_COVARIANCE, COVARIANCE_MATRIX, alpha, data_points, truncation_level, random_state = None):
+    BASE_MEASURE = scipy.stats.multivariate_normal(mean=BASE_MEAN,
+                                                cov=BASE_COVARIANCE,
+                                                allow_singular=True,
+                                                seed = random_state)
+
     weights = np.ones(shape=(truncation_level))
     partial_stick_breakoffs = np.random.beta(1, alpha, size=(truncation_level))
     weights[0] = partial_stick_breakoffs[0]
@@ -24,7 +30,7 @@ def _generate_simulated_data(BASE_MEASURE, COVARIANCE_MATRIX, alpha, data_points
     return np.array(tbret)
 
 
-def get_simulated_data():
+def get_simulated_data(random_state = None):
     all_dimensions = [5, 10, 20, 30, 40, 50]
     TRUNCATION_LEVEL = 20
     alpha = 1
@@ -43,15 +49,15 @@ def get_simulated_data():
 
         COVARIANCE_MATRIX = covariance_matrix
 
-        BASE_MEASURE = scipy.stats.multivariate_normal(mean=np.array([0 for _ in range(dimension)]),
-                                                       cov=np.ones((dimension, dimension)),
-                                                       allow_singular=True)
 
-        simulated_data = _generate_simulated_data(BASE_MEASURE=BASE_MEASURE,
+
+        simulated_data = generate_simulated_data(BASE_MEAN=np.zeros(dimension),
+                                                 BASE_COVARIANCE=np.ones((dimension, dimension)),
                                                   COVARIANCE_MATRIX=COVARIANCE_MATRIX,
                                                   alpha=alpha,
                                                   data_points=data_points,
-                                                  truncation_level=TRUNCATION_LEVEL)
+                                                  truncation_level=TRUNCATION_LEVEL,
+                                                  random_state=random_state)
 
         simulated_data_all_dimensions[dimension] = simulated_data
     return simulated_data_all_dimensions
