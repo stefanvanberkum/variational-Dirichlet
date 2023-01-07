@@ -11,23 +11,24 @@ class MvNormalPrior():
         cov = np.array(cov)
         self.dist = Multivariate_Normal_known_variance(cov)
         self.dim = len(cov)
-        self.det = np.linalg.det(cov)
         if taus is None:
             taus = np.ones(self.dim)
 
         self.taus = np.array(taus)
         self.cov = cov #covariance matrix of the distribution that is sampled for
-        self.precision = np.linalg.inv(cov)
+        self.precision = np.linalg.inv(cov) #precision matrix of known covariance matrix
+        self.det = np.linalg.det(cov)
+        self.precision_det = np.linalg.det(self.precision)
 
     def h(self, x):
-        return np.full(len(x), (2*np.pi)**(-self.dim/2))
+        return (2*np.pi)**(-self.dim/2)
 
     def T(self, x):
         pass
 
     def A(self, taus):
         lambda_1, lambda_2 = self.get_lambdas(taus)
-        return ((lambda_1.T@self.precision.T)@lambda_1)/(2*lambda_2) + 0.5*self.dim*np.log(lambda_2*self.det)
+        return (lambda_1.T@self.precision@lambda_1)/(2*lambda_2) - 0.5*self.dim*(np.log(lambda_2) + np.log(self.precision_det))
 
     def theta(self, taus): #calculate parameters theta from natural parameters eta
         lambda_1, lambda_2 = self.get_lambdas(taus)
@@ -37,7 +38,7 @@ class MvNormalPrior():
 
     def eta(self, theta): #calculate natural parameters eta from parameters theta
         mu_0, cov_0 = theta
-        lambda_2 = self.precision[0,0]/cov_0[0,0] #only need to calculate one fraction
+        lambda_2 = np.mean(self.precision/cov_0) #might not be exact fractions therefore take mean
         lambda_1 = np.linalg.solve(self.precision, mu_0*lambda_2)
         return (lambda_1, lambda_2)
 
@@ -52,7 +53,7 @@ class MvNormalPrior():
         expected_values = np.empty(len(taus))
         for k, tau in enumerate(taus): 
             lambda_1, lambda_2 = self.get_lambdas(tau)
-            expected_values[k] = (self.precision@lambda_1).T@lambda_1/(2*(lambda_2**2)) + self.dim/(2*lambda_2)
+            expected_values[k] = lambda_1.T@self.precision@lambda_1/(2*(np.square(lambda_2))) + self.dim/(2*lambda_2)
         return expected_values
 
     def rvs(self, N, taus = None):
