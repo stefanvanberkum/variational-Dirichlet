@@ -31,7 +31,7 @@ class GaussianMixtureModel:
         self.weights = np.array(weights)
         self.dim = self.mus.shape[1]
         self.K = len(self.weights)
-        self.components = [multivariate_normal(self.mus[i], np.diag(self.covs[i])) for i in range(len(weights))]
+        self.components = [multivariate_normal(self.mus[i], self.covs[i]) for i in range(len(weights))]
 
     #sample N random samples from the distribution
     def rvs(self, N):
@@ -234,9 +234,9 @@ class VI_SBmodel:
         
 
     def _update(self):
-        self._update_phis()
         self._update_gammas()
         self._update_taus()
+        self._update_phis()
 
 
     def get_thetas(self):
@@ -353,12 +353,13 @@ def test_VI():
 
         #Set Hyperparams
         alpha = 1
-        Lambda = np.full(dim + 1, 0.01)
+        Lambda = np.full(dim + 1, 0.001)
+        Lambda[-1] = 1
         #lambda_1, lambda_2 = MvNormalPrior(cov).eta((np.zeros(dim), np.eye(dim)/0.1))
 
-        lambda_1, lambda_2 = MvNormalPrior(cov).eta((sample_mean, np.eye(dim)/0.1))
-        Lambda[:-1] = lambda_1
-        Lambda[-1] = lambda_2
+        #lambda_1, lambda_2 = MvNormalPrior(cov).eta((sample_mean, np.eye(dim)/0.1))
+        #Lambda[:-1] = lambda_1
+        #Lambda[-1] = lambda_2
 
         prior = MvNormalPrior(cov, Lambda)
 
@@ -411,11 +412,13 @@ def test_dimensions():
         sample_mean = np.mean(samples, axis = 0)
 
         training_alpha = 1
-        Lambda = np.full(dimension + 1, 0.01)
+        alpha = 1
+        Lambda = np.full(dimension + 1, 0.001)
+        Lambda[-1] = 1
         #lambda_1, lambda_2 = MvNormalPrior(covariance_matrix).eta((np.zeros(dimension), np.eye(dimension)/0.1))
-        lambda_1, lambda_2 = MvNormalPrior(covariance_matrix).eta((sample_mean, np.eye(dimension)/0.1))
-        Lambda[:-1] = lambda_1
-        Lambda[-1] = lambda_2
+        #lambda_1, lambda_2 = MvNormalPrior(covariance_matrix).eta((sample_mean, np.eye(dimension)/0.1))
+        #Lambda[:-1] = lambda_1
+        #Lambda[-1] = lambda_2
 
         prior = MvNormalPrior(COVARIANCE_MATRIX, Lambda)
         SBP_VI = VI_SBmodel(prior, training_alpha, Lambda)
@@ -460,16 +463,15 @@ def test_robot_data():
     #Hyper Params
     dim = 8
     cov = np.cov(X_train.T)
-    #alpha = 2
-    #Lambda = np.zeros(dim + 1)
-    #Lambda[:-1] = sample_mean
-    #Lambda[-1] = 1 
-
     alpha = 1
-    Lambda = np.full(dim + 1, 0.01)
-    lambda_1, lambda_2 = MvNormalPrior(cov).eta((sample_mean, np.eye(dim)/0.1))
-    Lambda[:-1] = lambda_1
-    Lambda[-1] = lambda_2
+    Lambda = np.full(dim + 1, 0.001)
+    Lambda[-1] = 1
+
+    #alpha = 1
+    #Lambda = np.full(dim + 1, 0.01)
+    #lambda_1, lambda_2 = MvNormalPrior(cov).eta((sample_mean, np.eye(dim)/0.1))
+    #Lambda[:-1] = lambda_1
+    #Lambda[-1] = lambda_2
 
     prior = MvNormalPrior(cov, Lambda)
     SBP_VI = VI_SBmodel(prior, alpha, Lambda)
@@ -503,6 +505,7 @@ def gaussian_test():
         ]
 
     cov = np.diag([1, 1])
+    #cov = np.array([[1, 0.9],[0.9, 1]])
     covs = [
         cov,
         cov,
@@ -513,6 +516,18 @@ def gaussian_test():
         cov,
         cov
         ]
+
+
+    #weights = [1]
+    #mus = [
+    #    [-5, 0]
+    #    ]
+    #
+    #cov = np.diag([1, 1])
+    #cov = np.array([[1, 0.9],[0.9, 1]])
+    #covs = [
+    #    cov
+    #    ]
     
     GMM2 = GaussianMixtureModel(mus, covs, weights)
     X = GMM2.rvs(N*2)
@@ -526,10 +541,11 @@ def gaussian_test():
   
     dim = 2
     alpha = 1
-    Lambda = np.full(dim + 1, 0.01)
-    lambda_1, lambda_2 = MvNormalPrior(cov).eta((np.zeros(dim), np.eye(dim)/0.1))
-    Lambda[:-1] = lambda_1
-    Lambda[-1] = lambda_2
+    Lambda = np.full(dim + 1, 0.001)
+    Lambda[-1] = 1
+    #lambda_1, lambda_2 = MvNormalPrior(cov).eta((np.zeros(dim), np.eye(dim)/0.1))
+    #Lambda[:-1] = lambda_1
+    #Lambda[-1] = lambda_2
 
     prior = MvNormalPrior(cov, Lambda)
 
@@ -547,8 +563,96 @@ def gaussian_test():
     SBP_VI.plot(plt)
     plt.show()
 
+
+def gaussian_test_multiD():
+    N = 1000
+
+    all_dimensions = [5, 10, 20, 30, 40, 50]
+    weights = [1.0]
+    for dim in all_dimensions:
+        cov = np.zeros((dim, dim))
+        #Create autocorrelation matrix with rho = 0.9
+        #for i in range(dim):
+        #    for j in range(dim):
+        #        cov[i, j] = (0.9)**(abs(i - j))
+        cov = np.eye(dim)
+
+        mu = np.zeros((1,dim))
+    
+        GMM2 = GaussianMixtureModel(mu, [cov], weights)
+        X = GMM2.rvs(N*2)
+
+        samples, held_out = np.split(X, 2, axis = 0)
+        sample_mean = np.mean(samples, axis = 0)
+  
+        #alpha = 1
+        #Lambda = np.full(dim + 1, 0.01)
+        #lambda_1, lambda_2 = MvNormalPrior(cov).eta((sample_mean, np.eye(dim)/0.1))
+        #Lambda[:-1] = lambda_1
+        #Lambda[-1] = lambda_2
+
+        alpha = 1
+        Lambda = np.full(dim + 1, 0.001)
+        Lambda[-1] = 1
+
+        prior = MvNormalPrior(cov, Lambda)
+
+        SBP_VI = VI_SBmodel(prior, alpha, Lambda)
+        SBP_VI.fit(samples, 20, 500, 1e-10, 1, False)
+
+        log_prob = 0.0
+
+        for p in held_out:
+            prob = SBP_VI.predictive_likelihood(p)
+            log_prob += np.log(prob)
+            
+        print("avg held out LL:", log_prob/N)
+        print("actuall avg LL", np.log(np.mean(GMM2.pdf(held_out))))
+
+
+def GMM_test():
+    N = 1000000
+    weights = [1]
+    dims = [5, 10, 20, 30, 40, 50]
+    for dim in dims:
+        mus = [
+            np.zeros(dim)
+            ]
+
+        cov = np.zeros((dim, dim))
+            #Create autocorrelation matrix with rho = 0.9
+        for i in range(dim):
+            for j in range(dim):
+                cov[i, j] = (0.9)**(abs(i - j))
+
+        v1 = np.linalg.det(cov)
+        print("max:",(2*np.pi)**(-dim/2)*(np.linalg.det(cov)**(-1/2)))
+
+
+        #cov = np.diag([1, 1])
+        #cov = np.array([[1, 0.9],[0.9, 1]])
+        covs = [
+            cov
+            ]
+
+        GMM2 = GaussianMixtureModel(mus, covs, weights)
+        X = GMM2.rvs(N)
+        log_prob = 0.0
+
+        for p in X:
+            prob = GMM2.pdf([p])
+            log_prob += np.log(prob)
+
+        print(log_prob/N)
+    #x, y = np.split(X, [1],axis = 1)
+    #plt.scatter(x, y)
+    #plt.show()
+
+
 if __name__ == "__main__":
     test_VI()
     test_dimensions()
     gaussian_test()
     test_robot_data()
+    gaussian_test_multiD()
+    GMM_test()
